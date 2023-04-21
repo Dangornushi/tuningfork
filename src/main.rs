@@ -6,7 +6,6 @@ fn main() {
 
     let mut lexer = token::Lexer::new(code_string);
     let tokens = lexer.lex();
-    let mut Parser = parse::Parser::new(tokens.clone());
-    let ast = Parser.parse();
-    println!("{:?}", tokens);
+    let mut parser = parse::Parser::new(tokens.clone());
+    let ast = parser.parse();
 }

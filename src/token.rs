@@ -56,7 +56,7 @@ impl Lexer {
 
     pub fn lex(&mut self) -> Vec<Type> {
         let mut tokens = vec![];
-        let mut chars = &mut self.code.clone();
+        let chars = &mut self.code.clone();
         let mut chars = chars.chars().peekable();
 
         while let Some(&ch) = chars.peek() {
