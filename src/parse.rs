@@ -63,13 +63,45 @@ impl Node {
             tokens: tokens.clone(),
         }
     }
+
+    // pub fn expr(&mut self) -> Node {}
+    fn number(&mut self) -> Node {
+        Node {
+            kind: Some(NodeKind::Num(12)),
+            tokens: self.tokens.clone(),
+        }
+    }
+
+    fn body(&mut self) -> Node {
+        let vec_node = vec![self.number(), self.number()];
+
+        Node {
+            kind: Some(NodeKind::Block(vec_node)),
+            tokens: self.tokens.clone(),
+        }
+    }
+
+    pub fn function(&mut self) -> Node {
+        Node {
+            kind: Some(NodeKind::Function {
+                params: vec!["arg1".to_string(), "arg2".to_string()],
+                body: Box::new(self.body()),
+            }),
+            tokens: self.tokens.clone(),
+        }
+    }
     pub fn root(&mut self) -> Node {
         let num_enum = Node {
             kind: Some(NodeKind::Num(12)),
             tokens: self.tokens.clone(),
         };
 
-        let vec_node = vec![num_enum];
+        let num_enum_2 = Node {
+            kind: Some(NodeKind::Num(42)),
+            tokens: self.tokens.clone(),
+        };
+
+        let vec_node = vec![num_enum, num_enum_2];
 
         let block_enum = Node {
             kind: Some(NodeKind::Block(vec_node)),
