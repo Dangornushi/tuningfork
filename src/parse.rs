@@ -1,59 +1,81 @@
 use crate::token::Type;
 
-pub struct Parser {
-    tokens: Vec<Type>,
+pub enum Operator {
+    Plus,
+    Minus,
+    Slas,
+    Asterisk,
+    Colon,
+    Semicolon,
+    LParen,
+    RParen,
+    LBracket,
+    RBracket,
+    LBrace,
+    RBrace,
 }
 
-impl Parser {
-    pub fn new(tokens: Vec<Type>) -> Self {
-        Self { tokens }
-    }
-    pub fn parse(&mut self) {
-        let mut index = 0;
+pub enum NodeKind {
+    Num(i32),
+    UnaryOp {
+        op: Operator,
+        operand: Box<Node>,
+    },
+    BinaryOp {
+        op: Operator,
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
+    VarRef(String),
+    Assign {
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
+    Block(Vec<Node>),
+    If {
+        cond: Box<Node>,
+        then: Box<Node>,
+        else_: Option<Box<Node>>,
+    },
+    While {
+        cond: Box<Node>,
+        body: Box<Node>,
+    },
+    Function {
+        params: Vec<String>,
+        body: Box<Node>,
+    },
+    Call {
+        callee: Box<Node>,
+        args: Vec<Node>,
+    },
+}
 
-        loop {
-            if index >= self.tokens.len() {
-                break;
-            }
-            let token = &self.tokens[index];
-            match token {
-                Type::Identifier(identifier) => {
-                    match identifier.as_str() {
-                        "int" => {
-                            println!("Type: {:?}", token);
-                            // do something
-                        }
-                        "float" => {
-                            // do something else
-                        }
-                        _ => {
-                            println!("var: {:?}", token);
-                        }
-                    }
-                }
-                Type::Number(_) => {
-                    println!("num: {:?}", token);
-                }
-                Type::Less => {
-                    // tokenを一つ進める
-                    if let Some(next_item) = &self.tokens.get(index + 1) {
-                        if next_item == &&Type::Minus {
-                            println!("equal: <-");
-                            index += 1;
-                        } else {
-                            println!("less: {:?}", token);
-                        }
-                    }
-                }
-                Type::SemiCoron => {
-                    println!("semicoron: ;");
-                }
-                Type::Minus => {
-                    println!("minus: -");
-                }
-                _ => {}
-            }
-            index += 1;
+pub struct Node {
+    pub kind: Option<NodeKind>,
+    pub tokens: Vec<Type>,
+}
+
+impl Node {
+    pub fn new(tokens: Vec<Type>) -> Self {
+        Self {
+            kind: None,
+            tokens: tokens.clone(),
         }
+    }
+    pub fn root(&mut self) -> Node {
+        let num_enum = Node {
+            kind: Some(NodeKind::Num(12)),
+            tokens: self.tokens.clone(),
+        };
+
+        let vec_node = vec![num_enum];
+
+        let block_enum = Node {
+            kind: Some(NodeKind::Block(vec_node)),
+            tokens: self.tokens.clone(),
+        };
+
+        block_enum
     }
 }

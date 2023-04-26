@@ -16,6 +16,9 @@ pub enum Type {
     Equal,
     Less,
     Greater,
+    Enter,
+    LBraces,
+    RBraces,
     Identifier(String),
     Number(f64),
 }
@@ -46,6 +49,9 @@ impl Lexer {
             ')' => Type::RParen,
             '<' => Type::Less,
             '>' => Type::Greater,
+            '{' => Type::LBraces,
+            '}' => Type::RBraces,
+            '\n' => Type::Enter,
         );
         Self {
             tokens,
@@ -67,7 +73,12 @@ impl Lexer {
             } else {
                 match ch {
                     '0'..='9' => tokens.push(self.parse_number(&mut chars).unwrap()),
-                    ' ' | 'a'..='z' | 'A'..='Z' | '_' => {
+                    ' '
+                    | 'a'..='z'
+                    | 'A'..='Z'
+                    | '_'
+                    | '\u{3040}'..='\u{309F}'
+                    | '\u{4E00}'..='\u{9FFF}' => {
                         if ch == ' ' {
                             chars.next();
                         } else {
@@ -82,11 +93,27 @@ impl Lexer {
         tokens
     }
 
+    pub fn is_japanese_char(&mut self, c: char) -> bool {
+        let c = c as u32;
+
+        (0x3040 <= c && c <= 0x309F)   ||  // ひらがな
+        (0x30A0 <= c && c <= 0x30FF)   ||  // カタカナ
+        (0x3400 <= c && c <= 0x4DBF)   ||  // CJK統合漢字拡張A
+        (0x4E00 <= c && c <= 0x9FFF)   ||  // 基本漢字 + CJK統合漢字
+        (0x20000 <= c && c <= 0x2A6DF) ||  // CJK統合漢字拡張B ~ E
+        (0x2A700 <= c && c <= 0x2B73F) ||  // CJK統合漢字拡張F
+        (0x2B740 <= c && c <= 0x2B81F) ||  // CJK統合漢字拡張G
+        (0x2B820 <= c && c <= 0x2CEAF) ||  // CJK統合漢字拡張H ~ J
+        (0xF900 <= c && c <= 0xFAFF)   ||  // CJK互換漢字
+        (0x2F800 <= c && c <= 0x2FA1F) || // CJK互換漢字補助
+        (0x4E00 <= c && c <= 0x9FFF) // 漢字
+    }
+
     fn parse_identifier(&mut self, chars: &mut Peekable<Chars>) -> Option<Type> {
         let mut identifier = String::new();
 
         while let Some(&ch) = chars.peek() {
-            if ch.is_ascii_alphanumeric() || ch == '_' {
+            if ch.is_ascii_alphanumeric() || self.is_japanese_char(ch) || ch == '_' {
                 identifier.push(ch);
                 chars.next();
             } else {
