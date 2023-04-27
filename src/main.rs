@@ -32,13 +32,36 @@ return y",
         }
         NodeKind::Block(block) => {
             for b in block {
-                match b.kind.unwrap() {
-                    NodeKind::Num(num) => {
-                        println!("block: {:?}", num);
-                    }
-                    _ => {}
+                if let NodeKind::Num(num) = b.kind.unwrap() {
+                    println!("block: {:?}", num);
                 }
             }
+        }
+        NodeKind::Function { params, body } => {
+            for p in params {
+                println!("arguments: {}", p);
+            }
+
+            println!("Function: {{");
+
+            if let NodeKind::Block(block) = body.kind.unwrap() {
+                println!("Block: {{");
+                for b in block {
+                    if let NodeKind::Return { callee, args } = b.kind.unwrap() {
+                        println!("Retrun: {{");
+
+                        for c in args {
+                            if let NodeKind::Num(num) = c.kind.unwrap() {
+                                println!("num: {:?}", num);
+                            }
+                        }
+                        println!("Return: }}");
+                    }
+                }
+                println!("Block: }}");
+            }
+
+            println!("Function: }}");
         }
         _ => {}
     }

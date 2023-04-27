@@ -17,6 +17,7 @@ pub enum Operator {
 
 pub enum NodeKind {
     Num(i32),
+    Str(String),
     UnaryOp {
         op: Operator,
         operand: Box<Node>,
@@ -49,6 +50,10 @@ pub enum NodeKind {
         callee: Box<Node>,
         args: Vec<Node>,
     },
+    Return {
+        callee: Box<Node>,
+        args: Vec<Node>,
+    },
 }
 
 pub struct Node {
@@ -64,7 +69,17 @@ impl Node {
         }
     }
 
-    // pub fn expr(&mut self) -> Node {}
+    fn expect(&mut self, expect_token: String) -> bool {
+        true
+    }
+
+    fn word(&mut self) -> Node {
+        todo!();
+        Node {
+            kind: Some(NodeKind::Num(12)),
+            tokens: self.tokens.clone(),
+        }
+    }
     fn number(&mut self) -> Node {
         Node {
             kind: Some(NodeKind::Num(12)),
@@ -72,8 +87,28 @@ impl Node {
         }
     }
 
-    fn body(&mut self) -> Node {
+    fn expr(&mut self) -> Node {
         let vec_node = vec![self.number(), self.number()];
+        let return_node = Node {
+            kind: Some(NodeKind::Str("return".to_string())),
+            tokens: self.tokens.clone(),
+        };
+
+        if self.expect(";".to_string()) {
+            return Node {
+                kind: Some(NodeKind::Return {
+                    callee: Box::new(return_node),
+                    args: vec_node,
+                }),
+                tokens: self.tokens.clone(),
+            };
+        } else {
+            panic!("Syntax error: X is missing.")
+        }
+    }
+
+    fn body(&mut self) -> Node {
+        let vec_node = vec![self.expr()];
 
         Node {
             kind: Some(NodeKind::Block(vec_node)),
@@ -91,6 +126,7 @@ impl Node {
         }
     }
     pub fn root(&mut self) -> Node {
+        /*
         let num_enum = Node {
             kind: Some(NodeKind::Num(12)),
             tokens: self.tokens.clone(),
@@ -107,7 +143,9 @@ impl Node {
             kind: Some(NodeKind::Block(vec_node)),
             tokens: self.tokens.clone(),
         };
-
         block_enum
+        */
+
+        self.function()
     }
 }
