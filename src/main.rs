@@ -21,6 +21,11 @@ return y;",
         );
         */
 
+    println!(
+        "===--- Compile ---==={}\n===--- END ---===\n AST:\n",
+        code_string.clone()
+    );
+
     let mut lexer = token::Lexer::new(code_string);
     let tokens = lexer.lex();
     let mut parse = parse::Parser::new(&tokens);
