@@ -130,10 +130,6 @@ impl<'a> Parser<'a> {
 
     fn expr(&mut self) -> Node {
         let reserv = self.reserv();
-        /*
-                let mut nt = self.now_token.clone();
-                println!("{:?}", nt.next().unwrap().clone());
-        */
 
         if self.expect_err(Type::SemiColon) {}
 
@@ -141,7 +137,21 @@ impl<'a> Parser<'a> {
     }
 
     fn body(&mut self) -> Node {
-        let vec_node = vec![self.expr()];
+        let mut vec_node = Vec::new();
+
+        self.expect_err(Type::LBraces);
+        self.now_token.next();
+
+        loop {
+            let mut token = self.now_token.clone();
+
+            if token.next().unwrap().clone() == Type::RBraces {
+                break;
+            }
+
+            vec_node.push(self.expr());
+            self.now_token.next();
+        }
 
         Node {
             kind: Some(NodeKind::Block(vec_node)),

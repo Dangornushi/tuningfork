@@ -6,8 +6,10 @@ use crate::parse::NodeKind;
 fn main() {
     let code_string = String::from(
         "
+        {
 return x;
-return y;",
+return y;
+        }",
     );
     /*"
     int: main() <- {
