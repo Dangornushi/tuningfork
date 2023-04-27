@@ -6,7 +6,7 @@ pub enum Operator {
     Slas,
     Asterisk,
     Colon,
-    Semicolon,
+    SemiColon,
     LParen,
     RParen,
     LBracket,
@@ -50,61 +50,94 @@ pub enum NodeKind {
         callee: Box<Node>,
         args: Vec<Node>,
     },
-    Return {
-        callee: Box<Node>,
-        args: Vec<Node>,
-    },
+    Return(Box<Node>),
 }
 
 pub struct Node {
     pub kind: Option<NodeKind>,
-    pub tokens: Vec<Type>,
+    pub token: Type,
 }
 
 impl Node {
     pub fn new(tokens: Vec<Type>) -> Self {
         Self {
             kind: None,
-            tokens: tokens.clone(),
+            token: Type::EOF,
+        }
+    }
+}
+
+pub struct Parser<'a> {
+    pub node: Node,
+    pub now_token: std::slice::Iter<'a, Type>,
+    pub tokens: &'a [Type],
+}
+
+impl<'a> Parser<'a> {
+    pub fn new(tokens: &'a [Type]) -> Self {
+        Self {
+            node: Node::new(tokens.to_vec()),
+            now_token: tokens.iter(),
+            tokens,
         }
     }
 
-    fn expect(&mut self, expect_token: String) -> bool {
-        true
+    fn expect(&mut self, expect_token: Type) -> bool {
+        if self.now_token.next().unwrap().clone() == expect_token {
+            true
+        } else {
+            false
+        }
+    }
+
+    fn expect_err(&mut self, expect_token: Type) -> bool {
+        if self.expect(expect_token.clone()) {
+            true
+        } else {
+            panic!("Syntax error: {:?} is missing.", expect_token)
+        }
     }
 
     fn word(&mut self) -> Node {
-        todo!();
-        Node {
-            kind: Some(NodeKind::Num(12)),
-            tokens: self.tokens.clone(),
+        let mut token = self.now_token.clone();
+
+        if let Type::Identifier(word) = token.next().unwrap().clone() {
+            return Node {
+                kind: Some(NodeKind::Str(word)),
+                token: token.next().unwrap().clone(),
+            };
+        } else {
+            panic!("")
         }
     }
     fn number(&mut self) -> Node {
         Node {
             kind: Some(NodeKind::Num(12)),
-            tokens: self.tokens.clone(),
+            token: self.now_token.next().unwrap().clone(),
         }
     }
 
-    fn expr(&mut self) -> Node {
-        let vec_node = vec![self.number(), self.number()];
-        let return_node = Node {
-            kind: Some(NodeKind::Str("return".to_string())),
-            tokens: self.tokens.clone(),
-        };
+    fn reserv(&mut self) -> Node {
+        self.now_token.next();
 
-        if self.expect(";".to_string()) {
-            return Node {
-                kind: Some(NodeKind::Return {
-                    callee: Box::new(return_node),
-                    args: vec_node,
-                }),
-                tokens: self.tokens.clone(),
-            };
-        } else {
-            panic!("Syntax error: X is missing.")
-        }
+        let arg_node = self.word();
+
+        return Node {
+            kind: Some(NodeKind::Return(Box::new(arg_node))),
+            token: self.now_token.next().unwrap().clone(),
+        };
+    }
+
+    fn expr(&mut self) -> Node {
+        let reserv = self.reserv();
+        /*
+                let mut nt = self.now_token.clone();
+                println!("{:?}", nt.next().unwrap().clone());
+        */
+
+        if self.expect_err(Type::SemiColon) {}
+
+        reserv
     }
 
     fn body(&mut self) -> Node {
@@ -112,7 +145,7 @@ impl Node {
 
         Node {
             kind: Some(NodeKind::Block(vec_node)),
-            tokens: self.tokens.clone(),
+            token: self.now_token.next().unwrap().clone(),
         }
     }
 
@@ -122,30 +155,13 @@ impl Node {
                 params: vec!["arg1".to_string(), "arg2".to_string()],
                 body: Box::new(self.body()),
             }),
-            tokens: self.tokens.clone(),
+            token: self.now_token.next().unwrap().clone(),
         }
     }
+
     pub fn root(&mut self) -> Node {
-        /*
-        let num_enum = Node {
-            kind: Some(NodeKind::Num(12)),
-            tokens: self.tokens.clone(),
-        };
-
-        let num_enum_2 = Node {
-            kind: Some(NodeKind::Num(42)),
-            tokens: self.tokens.clone(),
-        };
-
-        let vec_node = vec![num_enum, num_enum_2];
-
-        let block_enum = Node {
-            kind: Some(NodeKind::Block(vec_node)),
-            tokens: self.tokens.clone(),
-        };
-        block_enum
-        */
-
-        self.function()
+        self.now_token = self.tokens.iter();
+        self.now_token.next();
+        self.body() //function()
     }
 }

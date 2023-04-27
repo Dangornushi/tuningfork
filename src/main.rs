@@ -6,8 +6,8 @@ use crate::parse::NodeKind;
 fn main() {
     let code_string = String::from(
         "
-return x
-return y",
+return x;
+return y;",
     );
     /*"
     int: main() <- {
@@ -23,19 +23,34 @@ return y",
 
     let mut lexer = token::Lexer::new(code_string);
     let tokens = lexer.lex();
-    let mut node = parse::Node::new(tokens.clone());
-    let ast = node.root();
+    let mut parse = parse::Parser::new(&tokens);
+    let ast = parse.root();
 
     match ast.kind.unwrap() {
         NodeKind::Num(num) => {
             println!("1: {:?}", num);
         }
         NodeKind::Block(block) => {
+            println!("Block: {{");
             for b in block {
-                if let NodeKind::Num(num) = b.kind.unwrap() {
-                    println!("block: {:?}", num);
+                println!("Retrun: {{");
+
+                match b.kind.unwrap() {
+                    NodeKind::Return(arg) => match arg.kind.unwrap() {
+                        NodeKind::Num(num) => {
+                            println!("num: {:?}", num);
+                        }
+                        NodeKind::Str(word) => {
+                            println!("word: {:?}", word);
+                        }
+
+                        _ => {}
+                    },
+                    _ => {}
                 }
+                println!("Retrun: }}");
             }
+            println!("Block: }}");
         }
         NodeKind::Function { params, body } => {
             for p in params {
@@ -47,16 +62,17 @@ return y",
             if let NodeKind::Block(block) = body.kind.unwrap() {
                 println!("Block: {{");
                 for b in block {
-                    if let NodeKind::Return { callee, args } = b.kind.unwrap() {
-                        println!("Retrun: {{");
+                    println!("Retrun: {{");
 
-                        for c in args {
-                            if let NodeKind::Num(num) = c.kind.unwrap() {
+                    match b.kind.unwrap() {
+                        NodeKind::Return(arg) => {
+                            if let NodeKind::Num(num) = arg.kind.unwrap() {
                                 println!("num: {:?}", num);
                             }
                         }
-                        println!("Return: }}");
+                        _ => {}
                     }
+                    println!("Return: }}");
                 }
                 println!("Block: }}");
             }

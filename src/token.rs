@@ -11,8 +11,8 @@ pub enum Type {
     Slash,
     LParen,
     RParen,
-    SemiCoron,
-    Coron,
+    SemiColon,
+    Colon,
     Equal,
     Less,
     Greater,
@@ -21,6 +21,7 @@ pub enum Type {
     RBraces,
     Identifier(String),
     Number(f64),
+    EOF,
 }
 
 pub struct Token {
@@ -42,8 +43,8 @@ impl Lexer {
             '-' => Type::Minus,
             '*' => Type::Asterisk,
             '/' => Type::Slash,
-            ';' => Type::SemiCoron,
-            ':' => Type::Coron,
+            ';' => Type::SemiColon,
+            ':' => Type::Colon,
             '=' => Type::Equal,
             '(' => Type::LParen,
             ')' => Type::RParen,
