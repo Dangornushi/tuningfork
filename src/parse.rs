@@ -117,10 +117,26 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn reserv(&mut self) -> Node {
-        self.now_token.next();
+    fn reserv_words(&mut self, identifier: String) -> Node {
+        match identifier.clone() {
+            "return".to_string() => {
+                let ret = self.reserv();
+            }
+            _ => {}
+        }
+        return ret;
+    }
 
-        let arg_node = self.word();
+    fn reserv(&mut self) -> Node {
+        match self.now_token.next().unwrap() {
+            Type::Identifier(identifier) => {
+                let arg_node = reserv_words(identifier);
+            }
+            Type::Number(n) => {
+                let arg_node = self.number();
+            }
+            _ => {}
+        }
 
         return Node {
             kind: Some(NodeKind::Return(Box::new(arg_node))),
