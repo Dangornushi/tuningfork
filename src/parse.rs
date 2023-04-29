@@ -117,31 +117,43 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn reserv_words(&mut self, identifier: String) -> Node {
-        match identifier.clone() {
-            "return".to_string() => {
-                let ret = self.reserv();
-            }
-            _ => {}
-        }
-        return ret;
-    }
-
-    fn reserv(&mut self) -> Node {
-        match self.now_token.next().unwrap() {
+    fn reserv_return(&mut self) -> Node {
+        let arg_node;
+        let mut next_token = self.now_token.clone();
+        match next_token.next().unwrap() {
             Type::Identifier(identifier) => {
-                let arg_node = reserv_words(identifier);
+                arg_node = self.reserv();
             }
-            Type::Number(n) => {
-                let arg_node = self.number();
+            _ => {
+                arg_node = self.reserv();
             }
-            _ => {}
         }
 
         return Node {
             kind: Some(NodeKind::Return(Box::new(arg_node))),
             token: self.now_token.next().unwrap().clone(),
         };
+    }
+
+    fn reserv(&mut self) -> Node {
+        let reserv_token = self.now_token.clone();
+
+        if let Type::Identifier(identifier) = reserv_token.clone().next().unwrap().clone() {
+            match identifier.as_str() {
+                "return" => {
+                    self.now_token.next();
+                    return self.reserv_return();
+                }
+                _ => {
+                    return self.word();
+                }
+            }
+        } else {
+            panic!(
+                "予想外のトークン: {:?}",
+                reserv_token.clone().next().unwrap().clone()
+            );
+        }
     }
 
     fn expr(&mut self) -> Node {
