@@ -1,12 +1,38 @@
 mod parse;
 mod token;
 
+use crate::parse::Node;
 use crate::parse::NodeKind;
+
+fn gen(node: Node) {
+    match node.kind.unwrap() {
+        NodeKind::Num(num) => {
+            println!("num: {:?}", num);
+        }
+        NodeKind::Str(word) => {
+            println!("word: {:?}", word);
+        }
+        NodeKind::Return(arg) => {
+            println!("Retrun: {{");
+            gen(*arg);
+            println!("Retrun: }}");
+        }
+        NodeKind::Block(block) => {
+            println!("Block: {{");
+            for b in block {
+                gen(b);
+            }
+            println!("Block: }}");
+        }
+        _ => {}
+    }
+}
 
 fn main() {
     let code_string = String::from(
         "
         {
+a;
 return x;
 return y;
         }",
@@ -33,59 +59,5 @@ return y;
     let mut parse = parse::Parser::new(&tokens);
     let ast = parse.root();
 
-    match ast.kind.unwrap() {
-        NodeKind::Num(num) => {
-            println!("1: {:?}", num);
-        }
-        NodeKind::Block(block) => {
-            println!("Block: {{");
-            for b in block {
-                println!("Retrun: {{");
-
-                match b.kind.unwrap() {
-                    NodeKind::Return(arg) => match arg.kind.unwrap() {
-                        NodeKind::Num(num) => {
-                            println!("num: {:?}", num);
-                        }
-                        NodeKind::Str(word) => {
-                            println!("word: {:?}", word);
-                        }
-
-                        _ => {}
-                    },
-                    _ => {}
-                }
-                println!("Retrun: }}");
-            }
-            println!("Block: }}");
-        }
-        NodeKind::Function { params, body } => {
-            for p in params {
-                println!("arguments: {}", p);
-            }
-
-            println!("Function: {{");
-
-            if let NodeKind::Block(block) = body.kind.unwrap() {
-                println!("Block: {{");
-                for b in block {
-                    println!("Retrun: {{");
-
-                    match b.kind.unwrap() {
-                        NodeKind::Return(arg) => {
-                            if let NodeKind::Num(num) = arg.kind.unwrap() {
-                                println!("num: {:?}", num);
-                            }
-                        }
-                        _ => {}
-                    }
-                    println!("Return: }}");
-                }
-                println!("Block: }}");
-            }
-
-            println!("Function: }}");
-        }
-        _ => {}
-    }
+    gen(ast);
 }

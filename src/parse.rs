@@ -45,9 +45,11 @@ pub enum NodeKind {
     Function {
         params: Vec<String>,
         body: Box<Node>,
+        //function_type: String,
+        //function_name: String,
     },
     Call {
-        callee: Box<Node>,
+        function_type: Box<Node>,
         args: Vec<Node>,
     },
     Return(Box<Node>),
@@ -59,7 +61,7 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new(tokens: Vec<Type>) -> Self {
+    pub fn new() -> Self {
         Self {
             kind: None,
             token: Type::EOF,
@@ -76,7 +78,7 @@ pub struct Parser<'a> {
 impl<'a> Parser<'a> {
     pub fn new(tokens: &'a [Type]) -> Self {
         Self {
-            node: Node::new(tokens.to_vec()),
+            node: Node::new(),
             now_token: tokens.iter(),
             tokens,
         }
@@ -94,7 +96,7 @@ impl<'a> Parser<'a> {
         if self.expect(expect_token.clone()) {
             true
         } else {
-            panic!("Syntax error: {:?} is missing.", expect_token)
+            panic!("Syntax error: {:?} がありません", expect_token)
         }
     }
 
@@ -117,22 +119,11 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn reserv_return(&mut self) -> Node {
-        let arg_node;
-        let mut next_token = self.now_token.clone();
-        match next_token.next().unwrap() {
-            Type::Identifier(identifier) => {
-                arg_node = self.reserv();
-            }
-            _ => {
-                arg_node = self.reserv();
-            }
-        }
+    fn call_function(&mut self) -> Node {
+        let word_node = self.word();
+        self.now_token.next();
 
-        return Node {
-            kind: Some(NodeKind::Return(Box::new(arg_node))),
-            token: self.now_token.next().unwrap().clone(),
-        };
+        return word_node;
     }
 
     fn reserv(&mut self) -> Node {
@@ -140,13 +131,28 @@ impl<'a> Parser<'a> {
 
         if let Type::Identifier(identifier) = reserv_token.clone().next().unwrap().clone() {
             match identifier.as_str() {
+                "if" => {
+                    self.now_token.next();
+                    let arg_node = self.reserv();
+
+                    return Node {
+                        kind: Some(NodeKind::Return(Box::new(arg_node))),
+                        token: self.now_token.next().unwrap().clone(),
+                    };
+                }
+
                 "return" => {
                     self.now_token.next();
-                    return self.reserv_return();
+                    let arg_node = self.reserv();
+                    let mut now_token = self.now_token.clone();
+
+                    return Node {
+                        kind: Some(NodeKind::Return(Box::new(arg_node))),
+                        token: now_token.next().unwrap().clone(),
+                    };
                 }
-                _ => {
-                    return self.word();
-                }
+
+                _ => self.call_function(),
             }
         } else {
             panic!(
@@ -188,10 +194,15 @@ impl<'a> Parser<'a> {
     }
 
     pub fn function(&mut self) -> Node {
+        let function_type = self.now_token.next().unwrap().clone();
+        self.expect_err(Type::Colon);
+        let function_name = self.now_token.next().unwrap().clone();
         Node {
             kind: Some(NodeKind::Function {
                 params: vec!["arg1".to_string(), "arg2".to_string()],
                 body: Box::new(self.body()),
+                //function_type,
+                //function_name,
             }),
             token: self.now_token.next().unwrap().clone(),
         }
@@ -200,6 +211,7 @@ impl<'a> Parser<'a> {
     pub fn root(&mut self) -> Node {
         self.now_token = self.tokens.iter();
         self.now_token.next();
-        self.body() //function()
+        //self.function()
+        self.body()
     }
 }
