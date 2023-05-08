@@ -23,7 +23,7 @@ pub enum NodeKind {
         operand: Box<Node>,
     },
     BinaryOp {
-        op: Operator,
+        op: Type,
         lhs: Box<Node>,
         rhs: Box<Node>,
     },
@@ -45,8 +45,8 @@ pub enum NodeKind {
     Function {
         params: Vec<String>,
         body: Box<Node>,
-        //function_type: String,
-        //function_name: String,
+        function_type: Type,
+        function_name: Type,
     },
     Call {
         function_type: Box<Node>,
@@ -102,6 +102,7 @@ impl<'a> Parser<'a> {
 
     fn word(&mut self) -> Node {
         let mut token = self.now_token.clone();
+        let mut token2 = self.now_token.clone();
 
         if let Type::Identifier(word) = token.next().unwrap().clone() {
             return Node {
@@ -109,7 +110,10 @@ impl<'a> Parser<'a> {
                 token: token.next().unwrap().clone(),
             };
         } else {
-            panic!("")
+            panic!(
+                "Typeが異なります!!!\n    予期されたタイプ: Identifier\n    確認されたタイプ: {:?}",
+                token2.next().unwrap().clone()
+            );
         }
     }
     fn number(&mut self) -> Node {
@@ -124,6 +128,47 @@ impl<'a> Parser<'a> {
         self.now_token.next();
 
         return word_node;
+    }
+
+    fn binary_op(&mut self) -> Node {
+        let lhs = self.call_function();
+        let op;
+        let rhs;
+
+        if self.now_token.clone().next().unwrap().clone() == Type::Asterisk
+            || self.now_token.clone().next().unwrap().clone() == Type::Slash
+        {
+            op = self.now_token.next().unwrap().clone();
+
+            rhs = Box::new(self.binary_op());
+
+            return Node {
+                kind: Some(NodeKind::BinaryOp {
+                    op,
+                    lhs: Box::new(lhs),
+                    rhs,
+                }),
+                token: Type::EOF,
+            };
+        }
+        if self.now_token.clone().next().unwrap().clone() == Type::Plus
+            || self.now_token.clone().next().unwrap().clone() == Type::Minus
+        {
+            op = self.now_token.next().unwrap().clone();
+
+            rhs = Box::new(self.binary_op());
+
+            return Node {
+                kind: Some(NodeKind::BinaryOp {
+                    op,
+                    lhs: Box::new(lhs),
+                    rhs,
+                }),
+                token: Type::EOF,
+            };
+        } else {
+            return lhs;
+        }
     }
 
     fn reserv(&mut self) -> Node {
@@ -144,6 +189,7 @@ impl<'a> Parser<'a> {
                 "return" => {
                     self.now_token.next();
                     let arg_node = self.reserv();
+
                     let mut now_token = self.now_token.clone();
 
                     return Node {
@@ -152,7 +198,7 @@ impl<'a> Parser<'a> {
                     };
                 }
 
-                _ => self.call_function(),
+                _ => self.binary_op(),
             }
         } else {
             panic!(
@@ -201,17 +247,17 @@ impl<'a> Parser<'a> {
             kind: Some(NodeKind::Function {
                 params: vec!["arg1".to_string(), "arg2".to_string()],
                 body: Box::new(self.body()),
-                //function_type,
-                //function_name,
+                function_type,
+                function_name,
             }),
-            token: self.now_token.next().unwrap().clone(),
+            token: Type::EOF,
         }
     }
 
     pub fn root(&mut self) -> Node {
         self.now_token = self.tokens.iter();
         self.now_token.next();
-        //self.function()
-        self.body()
+        self.function()
+        //self.body()
     }
 }

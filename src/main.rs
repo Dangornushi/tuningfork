@@ -12,6 +12,13 @@ fn gen(node: Node) {
         NodeKind::Str(word) => {
             println!("word: {:?}", word);
         }
+        NodeKind::BinaryOp { op, lhs, rhs } => {
+            println!("BinaryOp: {{");
+            gen(*lhs);
+            println!("op: {:?}", op);
+            gen(*rhs);
+            println!("BinaryOp: }}");
+        }
         NodeKind::Return(arg) => {
             println!("Retrun: {{");
             gen(*arg);
@@ -24,6 +31,20 @@ fn gen(node: Node) {
             }
             println!("Block: }}");
         }
+        NodeKind::Function {
+            params,
+            body,
+            function_type,
+            function_name,
+        } => {
+            print!("Function [");
+            for p in params {
+                print!("{}, ", p);
+            }
+            println!("] {{");
+            gen(*body);
+            println!("Function: }}");
+        }
         _ => {}
     }
 }
@@ -31,9 +52,9 @@ fn gen(node: Node) {
 fn main() {
     let code_string = String::from(
         "
-        {
+        int: main{
 a;
-return x;
+return x + y + z;
 return y;
         }",
     );
