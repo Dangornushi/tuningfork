@@ -19,6 +19,7 @@ pub enum Type {
     Enter,
     LBraces,
     RBraces,
+    Conma,
     Identifier(String),
     Number(f64),
     EOF,
@@ -52,6 +53,7 @@ impl Lexer {
             '>' => Type::Greater,
             '{' => Type::LBraces,
             '}' => Type::RBraces,
+            ',' => Type::Conma,
             '\n' => Type::Enter,
         );
         Self {

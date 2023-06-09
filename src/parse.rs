@@ -53,6 +53,9 @@ pub enum NodeKind {
         args: Vec<Node>,
     },
     Return(Box<Node>),
+    Root {
+        function_define_s: Vec<Node>,
+    },
 }
 
 pub struct Node {
@@ -73,6 +76,7 @@ pub struct Parser<'a> {
     pub node: Node,
     pub now_token: std::slice::Iter<'a, Type>,
     pub tokens: &'a [Type],
+    pub function_argments: Vec<String>,
 }
 
 impl<'a> Parser<'a> {
@@ -81,6 +85,7 @@ impl<'a> Parser<'a> {
             node: Node::new(),
             now_token: tokens.iter(),
             tokens,
+            function_argments: Vec::new(),
         }
     }
 
@@ -239,6 +244,19 @@ impl<'a> Parser<'a> {
         }
     }
 
+    pub fn argment(&mut self) -> Vec<Node> {
+        let mut arg;
+        let mut argments: Vec<Node> = Vec::new();
+        loop {
+            argments.push(self.reserv());
+            if self.expect(Type::Conma) {
+            } else {
+                break;
+            }
+        }
+        argments
+    }
+
     pub fn function(&mut self) -> Node {
         let function_type = self.now_token.next().unwrap().clone();
         self.expect_err(Type::Colon);
@@ -255,9 +273,15 @@ impl<'a> Parser<'a> {
     }
 
     pub fn root(&mut self) -> Node {
+        let mut function_define_s = Vec::new();
         self.now_token = self.tokens.iter();
         self.now_token.next();
-        self.function()
-        //self.body()
+        function_define_s.push(self.function());
+        self.now_token.next();
+        function_define_s.push(self.function());
+        Node {
+            kind: Some(NodeKind::Root { function_define_s }),
+            token: Type::EOF,
+        }
     }
 }

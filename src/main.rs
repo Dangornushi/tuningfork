@@ -3,6 +3,17 @@ mod token;
 
 use crate::parse::Node;
 use crate::parse::NodeKind;
+use crate::token::Type;
+
+fn get_identifier(type_data: Type) -> String {
+    let nothing = String::from("");
+
+    if let Type::Identifier(word) = type_data.clone() {
+        return word;
+    } else {
+        return nothing;
+    }
+}
 
 fn gen(node: Node) {
     match node.kind.unwrap() {
@@ -37,13 +48,21 @@ fn gen(node: Node) {
             function_type,
             function_name,
         } => {
-            print!("Function [");
+            print!("Function ");
+            print!("{} ", get_identifier(function_name));
+            print!("-> {}", get_identifier(function_type));
+            print!(" [");
             for p in params {
                 print!("{}, ", p);
             }
             println!("] {{");
             gen(*body);
             println!("Function: }}");
+        }
+        NodeKind::Root { function_define_s } => {
+            for ast in function_define_s {
+                gen(ast);
+            }
         }
         _ => {}
     }
@@ -56,6 +75,9 @@ fn main() {
 a;
 return x + y + z;
 return y;
+        }
+        int: sub1 {
+            x;
         }",
     );
     /*"
