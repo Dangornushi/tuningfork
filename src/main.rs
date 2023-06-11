@@ -53,7 +53,7 @@ fn gen(node: Node) {
             print!("-> {}", get_identifier(function_type));
             print!(" [");
             for p in params {
-                print!("{}, ", p);
+                gen(p);
             }
             println!("] {{");
             gen(*body);
@@ -71,12 +71,12 @@ fn gen(node: Node) {
 fn main() {
     let code_string = String::from(
         "
-        int: main{
+        int: main(a){
 a;
 return x + y + z;
 return y;
         }
-        int: sub1 {
+        int: sub1(b) {
             x;
         }",
     );

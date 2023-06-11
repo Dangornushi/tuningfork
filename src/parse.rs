@@ -43,7 +43,7 @@ pub enum NodeKind {
         body: Box<Node>,
     },
     Function {
-        params: Vec<String>,
+        params: Vec<Node>,
         body: Box<Node>,
         function_type: Type,
         function_name: Type,
@@ -244,26 +244,33 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn argment(&mut self) -> Vec<Node> {
-        let mut arg;
-        let mut argments: Vec<Node> = Vec::new();
+    pub fn argument(&mut self) -> Vec<Node> {
+        let mut arguments: Vec<Node> = Vec::new();
         loop {
-            argments.push(self.reserv());
-            if self.expect(Type::Conma) {
+            arguments.push(self.reserv());
+            let mut token = self.now_token.clone();
+            println!("OK: {:?}", token.next().unwrap().clone());
+
+            let mut token = self.now_token.clone();
+
+            if token.next().unwrap().clone() == Type::Conma {
             } else {
                 break;
             }
         }
-        argments
+        arguments
     }
 
     pub fn function(&mut self) -> Node {
         let function_type = self.now_token.next().unwrap().clone();
         self.expect_err(Type::Colon);
         let function_name = self.now_token.next().unwrap().clone();
+        self.expect_err(Type::LParen);
+        let argument = self.argument();
+        self.expect_err(Type::RParen);
         Node {
             kind: Some(NodeKind::Function {
-                params: vec!["arg1".to_string(), "arg2".to_string()],
+                params: argument,
                 body: Box::new(self.body()),
                 function_type,
                 function_name,
