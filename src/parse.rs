@@ -240,8 +240,11 @@ impl<'a> Parser<'a> {
             let mut token = self.now_token.clone();
 
             if token.next().unwrap().clone() == Type::Conma {
+                self.now_token.next();
             } else {
-                println!("OK: {:?}", token.next().unwrap().clone());
+                //                let mut token = self.now_token.clone();
+                //                println!("OK: {:?}", token.next().unwrap().clone());
+                //                self.now_token.next();
                 break;
             }
         }

@@ -71,12 +71,12 @@ fn gen(node: Node) {
 fn main() {
     let code_string = String::from(
         "
-        int: main(int a){
+        int: main(return a, return b){
 a;
 return x + y + z;
 return y;
         }
-        int: sub1(b) {
+        int: sub1(return c, return d) {
             x;
         }",
     );
