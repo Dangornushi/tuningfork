@@ -1,27 +1,12 @@
 use crate::token::Type;
 
-pub enum Operator {
-    Plus,
-    Minus,
-    Slas,
-    Asterisk,
-    Colon,
-    SemiColon,
-    LParen,
-    RParen,
-    LBracket,
-    RBracket,
-    LBrace,
-    RBrace,
+fn type_of<T>(_: &T) -> &'static str {
+    std::any::type_name::<T>()
 }
 
 pub enum NodeKind {
     Num(i32),
     Str(String),
-    UnaryOp {
-        op: Operator,
-        operand: Box<Node>,
-    },
     BinaryOp {
         op: Type,
         lhs: Box<Node>,
@@ -171,6 +156,10 @@ impl<'a> Parser<'a> {
                 }),
                 token: Type::EOF,
             };
+        }
+        if type_of(self.now_token.clone().next().unwrap()) == "Type::Identifier" {
+            println!("OK");
+            return lhs;
         } else {
             return lhs;
         }
@@ -249,12 +238,10 @@ impl<'a> Parser<'a> {
         loop {
             arguments.push(self.reserv());
             let mut token = self.now_token.clone();
-            println!("OK: {:?}", token.next().unwrap().clone());
-
-            let mut token = self.now_token.clone();
 
             if token.next().unwrap().clone() == Type::Conma {
             } else {
+                println!("OK: {:?}", token.next().unwrap().clone());
                 break;
             }
         }

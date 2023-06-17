@@ -71,7 +71,7 @@ fn gen(node: Node) {
 fn main() {
     let code_string = String::from(
         "
-        int: main(a){
+        int: main(int a){
 a;
 return x + y + z;
 return y;
