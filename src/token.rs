@@ -69,12 +69,25 @@ impl Lexer {
         let mut chars = chars.chars().peekable();
 
         while let Some(&ch) = chars.peek() {
-            if let Some(value) = self.char_to_type.get(&ch).cloned() {
+            if ch == '<' {
+                let mut chars2 = chars.clone();
+                chars2.next();
+                let ch2 = chars2.next();
+
+                if ch2.unwrap() == '-' {
+                    tokens.push(Type::Equal);
+                    chars.next();
+                } else {
+                    tokens.push(Type::Less);
+                }
+                chars.next();
+            } else if let Some(value) = self.char_to_type.get(&ch).cloned() {
                 // `ch`が`char_to_type`のキーに存在する場合、`value`は`char_to_type[ch]`の値
                 tokens.push(value);
                 chars.next();
             } else {
                 match ch {
+                    // tokenに数字をプッシュ
                     '0'..='9' => tokens.push(self.parse_number(&mut chars).unwrap()),
                     ' '
                     | 'a'..='z'
@@ -83,8 +96,10 @@ impl Lexer {
                     | '\u{3040}'..='\u{309F}'
                     | '\u{4E00}'..='\u{9FFF}' => {
                         if ch == ' ' {
+                            // tokenをスキップ
                             chars.next();
                         } else {
+                            // 単語ごとに区切られた文字列をTokensにプッシュする
                             tokens.push(self.parse_identifier(&mut chars).unwrap())
                         }
                     }

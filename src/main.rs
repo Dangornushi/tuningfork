@@ -35,6 +35,13 @@ fn gen(node: Node) {
             gen(*arg);
             println!("Retrun: }}");
         }
+        NodeKind::If { cond, then, else_ } => {
+            println!("If [");
+            gen(*cond);
+            println!("]: {{");
+            gen(*then);
+            println!("If: }}");
+        }
         NodeKind::Block(block) => {
             println!("Block: {{");
             for b in block {
@@ -71,14 +78,16 @@ fn gen(node: Node) {
 fn main() {
     let code_string = String::from(
         "
-        int: main(return a, return b){
-a;
-return x + y + z;
-return y;
-        }
-        int: sub1(return c, return d) {
-            x;
-        }",
+int: main(return a, return b) <- {
+    a;
+    return x + y + z;
+}
+int: sub1(return c, return d) <- {
+    x;
+    if () {
+        return x;
+    };
+}",
     );
     /*"
     int: main() <- {

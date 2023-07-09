@@ -170,16 +170,6 @@ impl<'a> Parser<'a> {
 
         if let Type::Identifier(identifier) = reserv_token.clone().next().unwrap().clone() {
             match identifier.as_str() {
-                "if" => {
-                    self.now_token.next();
-                    let arg_node = self.reserv();
-
-                    return Node {
-                        kind: Some(NodeKind::Return(Box::new(arg_node))),
-                        token: self.now_token.next().unwrap().clone(),
-                    };
-                }
-
                 "return" => {
                     self.now_token.next();
                     let arg_node = self.reserv();
@@ -191,7 +181,30 @@ impl<'a> Parser<'a> {
                         token: now_token.next().unwrap().clone(),
                     };
                 }
+                "if" => {
+                    self.now_token.next();
+                    self.expect(Type::LParen);
+                    self.expect(Type::RParen);
+                    let then = self.body();
 
+                    return Node {
+                        kind: Some(NodeKind::If {
+                            cond: Box::new(Node {
+                                kind: Some(NodeKind::Num(0)),
+                                token: Type::EOF,
+                            }),
+                            then: Box::new(then),
+                            else_: None,
+                        }),
+                        token: Type::EOF,
+                    };
+                }
+                /*
+                "while" => {
+                    self.now_token.next();
+                    self.expect(Type::LParen);
+                    self.expect(Type::RParen);
+                }*/
                 _ => self.binary_op(),
             }
         } else {
@@ -258,6 +271,8 @@ impl<'a> Parser<'a> {
         self.expect_err(Type::LParen);
         let argument = self.argument();
         self.expect_err(Type::RParen);
+        self.expect_err(Type::Equal);
+        //        self.expect_err(Type::Minus);
         Node {
             kind: Some(NodeKind::Function {
                 params: argument,
