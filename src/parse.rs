@@ -1,3 +1,5 @@
+use std::process::exit;
+
 use crate::token::Type;
 
 fn type_of<T>(_: &T) -> &'static str {
@@ -7,6 +9,7 @@ fn type_of<T>(_: &T) -> &'static str {
 pub enum NodeKind {
     Num(i32),
     Str(String),
+    Pass(String),
     BinaryOp {
         op: Type,
         lhs: Box<Node>,
@@ -165,6 +168,16 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn boolean(&mut self) -> Node {
+        let lhs = self.reserv();
+        print!("{:?} ", self.now_token.next().unwrap().clone());
+        let op = self.now_token.clone();
+        return Node {
+            kind: None,
+            token: Type::EOF,
+        };
+    }
+
     fn reserv(&mut self) -> Node {
         let reserv_token = self.now_token.clone();
 
@@ -183,8 +196,7 @@ impl<'a> Parser<'a> {
                 }
                 "if" => {
                     self.now_token.next();
-                    self.expect(Type::LParen);
-                    self.expect(Type::RParen);
+                    self.boolean();
                     let then = self.body();
 
                     return Node {
@@ -199,12 +211,21 @@ impl<'a> Parser<'a> {
                         token: Type::EOF,
                     };
                 }
+                "pass" => {
+                    let word = String::from("Pass");
+                    self.now_token.next();
+                    return Node {
+                        kind: Some(NodeKind::Pass(word)),
+                        token: Type::EOF,
+                    };
+                }
                 /*
                 "while" => {
                     self.now_token.next();
                     self.expect(Type::LParen);
                     self.expect(Type::RParen);
-                }*/
+                }
+                 */
                 _ => self.binary_op(),
             }
         } else {

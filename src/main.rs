@@ -84,7 +84,7 @@ int: main(return a, return b) <- {
 }
 int: sub1(return c, return d) <- {
     x;
-    if () {
+    if pass+ {
         return x;
     };
 }",
