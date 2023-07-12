@@ -5,7 +5,7 @@ use crate::token::Type;
 fn type_of<T>(_: &T) -> &'static str {
     std::any::type_name::<T>()
 }
-
+#[derive(Clone)]
 pub enum NodeKind {
     Num(i32),
     Str(String),
@@ -18,6 +18,11 @@ pub enum NodeKind {
     VarRef(String),
     Assign {
         lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
+    Compare {
+        lhs: Box<Node>,
+        op: Box<Type>,
         rhs: Box<Node>,
     },
     Block(Vec<Node>),
@@ -45,7 +50,7 @@ pub enum NodeKind {
         function_define_s: Vec<Node>,
     },
 }
-
+#[derive(Clone)]
 pub struct Node {
     pub kind: Option<NodeKind>,
     pub token: Type,
@@ -168,12 +173,30 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn err_message(&mut self, msg: String) {
+        println!("Err:{}", msg);
+    }
+
     fn boolean(&mut self) -> Node {
         let lhs = self.reserv();
-        print!("{:?} ", self.now_token.next().unwrap().clone());
-        let op = self.now_token.clone();
+        let op;
+
+        match self.now_token.clone().next().unwrap() {
+            Type::Greater | Type::Less => {
+                op = self.now_token.next();
+            }
+            _ => {
+                return lhs;
+            }
+        }
+        let rhs = self.boolean();
+
         return Node {
-            kind: None,
+            kind: Some(NodeKind::Compare {
+                lhs: Box::new(lhs),
+                op: Box::new(Type::Less),
+                rhs: Box::new(rhs),
+            }),
             token: Type::EOF,
         };
     }
@@ -196,15 +219,12 @@ impl<'a> Parser<'a> {
                 }
                 "if" => {
                     self.now_token.next();
-                    self.boolean();
+                    let boolean = self.boolean();
                     let then = self.body();
 
                     return Node {
                         kind: Some(NodeKind::If {
-                            cond: Box::new(Node {
-                                kind: Some(NodeKind::Num(0)),
-                                token: Type::EOF,
-                            }),
+                            cond: Box::new(boolean),
                             then: Box::new(then),
                             else_: None,
                         }),

@@ -23,6 +23,9 @@ fn gen(node: Node) {
         NodeKind::Str(word) => {
             println!("word: {:?}", word);
         }
+        NodeKind::Pass(word) => {
+            println!("!Pass!")
+        }
         NodeKind::BinaryOp { op, lhs, rhs } => {
             println!("BinaryOp: {{");
             gen(*lhs);
@@ -34,6 +37,13 @@ fn gen(node: Node) {
             println!("Retrun: {{");
             gen(*arg);
             println!("Retrun: }}");
+        }
+        NodeKind::Compare { lhs, op, rhs } => {
+            println!("Compare [");
+            gen(*lhs);
+            println!("{:?}", op);
+            gen(*rhs);
+            println!("]")
         }
         NodeKind::If { cond, then, else_ } => {
             println!("If [");
@@ -84,7 +94,7 @@ int: main(return a, return b) <- {
 }
 int: sub1(return c, return d) <- {
     x;
-    if pass+ {
+    if pass>pass {
         return x;
     };
 }",
