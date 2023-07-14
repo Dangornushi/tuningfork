@@ -26,6 +26,11 @@ pub enum NodeKind {
         rhs: Box<Node>,
     },
     Block(Vec<Node>),
+    Let {
+        v_name: String,
+        v_type: String,
+        v_formula: Box<Node>,
+    },
     If {
         cond: Box<Node>,
         then: Box<Node>,
@@ -115,9 +120,18 @@ impl<'a> Parser<'a> {
         }
     }
     fn number(&mut self) -> Node {
-        Node {
-            kind: Some(NodeKind::Num(12)),
-            token: self.now_token.next().unwrap().clone(),
+        let mut token = self.now_token.clone();
+
+        if let Type::Number(number) = token.next().unwrap().clone() {
+            return Node {
+                kind: Some(NodeKind::Num(number as i32)),
+                token: self.now_token.next().unwrap().clone(),
+            };
+        } else {
+            panic!(
+                "予想外のトークン: {:?}",
+                self.now_token.clone().next().unwrap().clone()
+            );
         }
     }
 
@@ -202,9 +216,46 @@ impl<'a> Parser<'a> {
     }
 
     fn reserv(&mut self) -> Node {
-        let reserv_token = self.now_token.clone();
+        let reserv_token = self.now_token.clone().next().unwrap();
+        let mut next_token_base = self.now_token.clone();
+        next_token_base.next();
+        let next_token = next_token_base.next().unwrap();
 
-        if let Type::Identifier(identifier) = reserv_token.clone().next().unwrap().clone() {
+        if let Type::Colon = *next_token {
+            // int: hoge
+            let mut v_type = String::from("");
+            let mut v_name = String::from("");
+            let mut v_formula = Box::new(Node {
+                kind: None,
+                token: Type::EOF,
+            });
+
+            if let Type::Identifier(word) = reserv_token {
+                v_type = word.to_string();
+            }
+            self.now_token.next();
+            self.expect_err(Type::Colon);
+            if let Type::Identifier(word) = self.now_token.next().unwrap() {
+                v_name = word.to_string();
+            }
+
+            // int: hoge = hoge
+            // TODO
+
+            if *self.now_token.clone().next().unwrap() == Type::Equal {
+                self.now_token.next();
+                v_formula = Box::new(self.reserv());
+            }
+
+            return Node {
+                kind: Some(NodeKind::Let {
+                    v_name,
+                    v_type,
+                    v_formula,
+                }),
+                token: Type::EOF,
+            };
+        } else if let Type::Identifier(identifier) = reserv_token.clone() {
             match identifier.as_str() {
                 "return" => {
                     self.now_token.next();
@@ -249,10 +300,9 @@ impl<'a> Parser<'a> {
                 _ => self.binary_op(),
             }
         } else {
-            panic!(
-                "予想外のトークン: {:?}",
-                reserv_token.clone().next().unwrap().clone()
-            );
+            return self.number();
+            /*
+             */
         }
     }
 
