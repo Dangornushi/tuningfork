@@ -47,7 +47,7 @@ pub enum NodeKind {
         function_name: Type,
     },
     Call {
-        function_type: Box<Node>,
+        function_name: Box<Node>,
         args: Vec<Node>,
     },
     Return(Box<Node>),
@@ -122,6 +122,8 @@ impl<'a> Parser<'a> {
     fn number(&mut self) -> Node {
         let mut token = self.now_token.clone();
 
+        println!("{:?}", self.now_token.clone().next());
+
         if let Type::Number(number) = token.next().unwrap().clone() {
             return Node {
                 kind: Some(NodeKind::Num(number as i32)),
@@ -136,10 +138,30 @@ impl<'a> Parser<'a> {
     }
 
     fn call_function(&mut self) -> Node {
-        let word_node = self.word();
+        let function_name_node = self.word();
         self.now_token.next();
+        let mut args = vec![Node {
+            kind: None,
+            token: Type::EOF,
+        }];
 
-        return word_node;
+        if *self.now_token.clone().next().unwrap() == Type::LParen {
+            self.now_token.next();
+            let next_token = self.now_token.clone().next().unwrap();
+            if *next_token != Type::RParen {
+                args = self.argument();
+            }
+            self.now_token.next();
+        } else {
+        }
+
+        return Node {
+            kind: Some(NodeKind::Call {
+                function_name: Box::new(function_name_node),
+                args,
+            }),
+            token: Type::EOF,
+        };
     }
 
     fn binary_op(&mut self) -> Node {

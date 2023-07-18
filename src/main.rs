@@ -1,8 +1,10 @@
 mod parse;
+mod python_generator;
 mod token;
 
 use crate::parse::Node;
 use crate::parse::NodeKind;
+use crate::python_generator::PythonGenerator;
 use crate::token::Type;
 
 fn get_identifier(type_data: Type) -> String {
@@ -24,6 +26,18 @@ fn gen(node: Node) {
             NodeKind::Str(word) => {
                 println!("word: {:?}", word);
             }
+            NodeKind::Call {
+                function_name,
+                args,
+            } => {
+                print!("Call ");
+                gen(*function_name);
+                print!(", args: {{");
+                for arg_node in args {
+                    gen(arg_node);
+                }
+                println!("}}");
+            }
             NodeKind::Pass(word) => {
                 println!("!Pass!")
             }
@@ -40,20 +54,20 @@ fn gen(node: Node) {
                 println!("Retrun: }}");
             }
             NodeKind::Compare { lhs, op, rhs } => {
-                println!("Compare [");
+                println!("Compare {{");
                 gen(*lhs);
                 println!("{:?}", op);
                 gen(*rhs);
-                println!("]")
+                println!("}}")
             }
             NodeKind::Let {
                 v_name,
                 v_type,
                 v_formula,
             } => {
-                println!("Let {}:{} [", v_name, v_type);
+                println!("Let {}:{} {{", v_name, v_type);
                 gen(*v_formula);
-                println!("]");
+                println!("}}");
             }
             NodeKind::If { cond, then, else_ } => {
                 println!("If [");
@@ -100,17 +114,20 @@ fn gen(node: Node) {
 fn main() {
     let code_string = String::from(
         "
+int: sub1(return c, return d) <- {
+    pass;
+}
 int: main(int: a, return b) <- {
     a;
+    b();
+    c(12);
     int: x <- 12;
-    return x + y + z;
-}
-int: sub1(return c, return d) <- {
-    x;
-    if pass>pass<12 {
+    if pass>x<12 {
         return x;
     };
-}",
+    return x + y + z;
+}
+",
     );
     /*"
     int: main() <- {
