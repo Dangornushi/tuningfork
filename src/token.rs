@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::iter::Peekable;
 use std::str::Chars;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Type {
     Plus,
     Minus,
@@ -21,7 +21,7 @@ pub enum Type {
     RBraces,
     Conma,
     Identifier(String),
-    Number(f64),
+    Number(i64),
     EOF,
 }
 

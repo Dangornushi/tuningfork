@@ -5,7 +5,7 @@ use crate::token::Type;
 fn type_of<T>(_: &T) -> &'static str {
     std::any::type_name::<T>()
 }
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum NodeKind {
     Num(i32),
     Str(String),
@@ -30,6 +30,7 @@ pub enum NodeKind {
         v_name: String,
         v_type: String,
         v_formula: Box<Node>,
+        this_is_define: bool,
     },
     If {
         cond: Box<Node>,
@@ -51,11 +52,14 @@ pub enum NodeKind {
         args: Vec<Node>,
     },
     Return(Box<Node>),
+    Expr {
+        reserv: Box<Node>,
+    },
     Root {
         function_define_s: Vec<Node>,
     },
 }
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Node {
     pub kind: Option<NodeKind>,
     pub token: Type,
@@ -121,8 +125,6 @@ impl<'a> Parser<'a> {
     }
     fn number(&mut self) -> Node {
         let mut token = self.now_token.clone();
-
-        println!("{:?}", self.now_token.clone().next());
 
         if let Type::Number(number) = token.next().unwrap().clone() {
             return Node {
@@ -230,7 +232,7 @@ impl<'a> Parser<'a> {
         return Node {
             kind: Some(NodeKind::Compare {
                 lhs: Box::new(lhs),
-                op: Box::new(Type::Less),
+                op: Box::new(op.unwrap().clone()),
                 rhs: Box::new(rhs),
             }),
             token: Type::EOF,
@@ -251,6 +253,7 @@ impl<'a> Parser<'a> {
                 kind: None,
                 token: Type::EOF,
             });
+            let mut this_is_define = false;
 
             if let Type::Identifier(word) = reserv_token {
                 v_type = word.to_string();
@@ -267,6 +270,7 @@ impl<'a> Parser<'a> {
             if *self.now_token.clone().next().unwrap() == Type::Equal {
                 self.now_token.next();
                 v_formula = Box::new(self.reserv());
+                this_is_define = true;
             }
 
             return Node {
@@ -274,6 +278,7 @@ impl<'a> Parser<'a> {
                     v_name,
                     v_type,
                     v_formula,
+                    this_is_define,
                 }),
                 token: Type::EOF,
             };
@@ -333,7 +338,12 @@ impl<'a> Parser<'a> {
 
         if self.expect_err(Type::SemiColon) {}
 
-        reserv
+        Node {
+            kind: Some(NodeKind::Expr {
+                reserv: Box::new(reserv),
+            }),
+            token: Type::EOF,
+        }
     }
 
     fn body(&mut self) -> Node {
