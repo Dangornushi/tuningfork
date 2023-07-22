@@ -100,7 +100,8 @@ impl Lexer {
                             chars.next();
                         } else {
                             // 単語ごとに区切られた文字列をTokensにプッシュする
-                            tokens.push(self.parse_identifier(&mut chars).unwrap())
+                            let words = self.parse_identifier(&mut chars).unwrap();
+                            tokens.push(words);
                         }
                     }
                     _ => panic!("Invalid character: {}", ch),

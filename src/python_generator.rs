@@ -3,7 +3,10 @@ use crate::parse::NodeKind;
 use crate::token::Type;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{self, Write};
+use std::process::exit;
+
+const CONST_VARIABLE_RESERV: i32 = 0;
+const CONST_FUNCTION_RESERV: i32 = 1;
 
 fn str_to_string(s: &str) -> String {
     s.to_string()
@@ -13,6 +16,8 @@ pub struct PythonGenerator {
     tabs_counter: i32,
     python_source_buf: String,
     op_preset: HashMap<Type, String>,
+    get_variable_or_function: HashMap<String, i32>,
+    is_sucsess_type_test: bool,
 }
 
 impl PythonGenerator {
@@ -26,9 +31,11 @@ impl PythonGenerator {
                 (Type::Plus, "+"),
                 (Type::Minus, "-"),
             ]
-            .into_iter() // into_iter()を使って所有権を移動させる
+            .into_iter()
             .map(|(k, v)| (k, v.to_string()))
             .collect(),
+            get_variable_or_function: HashMap::new(),
+            is_sucsess_type_test: true,
         }
     }
 
@@ -79,10 +86,21 @@ impl PythonGenerator {
                     function_name,
                     args,
                 } => {
-                    self.generator(*function_name);
-                    self.add_python_source_buf("(".to_string());
-                    self.exec_argument(args);
-                    self.add_python_source_buf(")".to_string());
+                    self.add_python_source_buf(function_name.clone());
+                    match self.get_variable_or_function.get(&function_name) {
+                        Some(value) => {
+                            if *value == CONST_FUNCTION_RESERV {
+                                self.add_python_source_buf("(".to_string());
+                                self.exec_argument(args);
+                                self.add_python_source_buf(")".to_string());
+                            } else {
+                            }
+                        }
+                        None => {
+                            println!("Err: {}が定義されていません", function_name);
+                            self.is_sucsess_type_test = false;
+                        }
+                    }
                 }
                 NodeKind::Pass(word) => self.add_python_source_buf("pass".to_string()),
                 NodeKind::BinaryOp { op, lhs, rhs } => {
@@ -105,8 +123,10 @@ impl PythonGenerator {
                     v_formula,
                     this_is_define,
                 } => {
-                    self.add_python_source_buf(v_name);
+                    self.add_python_source_buf(v_name.clone());
                     if this_is_define {
+                        self.get_variable_or_function
+                            .insert(v_name, CONST_VARIABLE_RESERV);
                         self.add_python_source_buf(" = ".to_string());
                     }
                     self.generator(*v_formula);
@@ -136,8 +156,11 @@ impl PythonGenerator {
                     function_type,
                     function_name,
                 } => {
-                    self.add_python_source_buf("def ".to_string());
                     let identifier = self.get_identifier(function_name);
+                    self.get_variable_or_function
+                        .insert(identifier.clone().to_string(), CONST_FUNCTION_RESERV);
+
+                    self.add_python_source_buf("def ".to_string());
                     self.add_python_source_buf(identifier.to_string());
                     self.add_python_source_buf("(".to_string());
                     self.exec_argument(params);
@@ -147,6 +170,9 @@ impl PythonGenerator {
                 NodeKind::Root { function_define_s } => {
                     for ast in function_define_s {
                         self.generator(ast);
+                    }
+                    if !self.is_sucsess_type_test {
+                        exit(0);
                     }
                     println!("{}", self.python_source_buf);
                 }

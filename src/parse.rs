@@ -1,5 +1,3 @@
-use std::process::exit;
-
 use crate::token::Type;
 
 fn type_of<T>(_: &T) -> &'static str {
@@ -48,7 +46,7 @@ pub enum NodeKind {
         function_name: Type,
     },
     Call {
-        function_name: Box<Node>,
+        function_name: String,
         args: Vec<Node>,
     },
     Return(Box<Node>),
@@ -91,7 +89,25 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn skip(&mut self, expect_token: Type) -> bool {
+        let mut token = self.now_token.clone();
+
+        if token.next().unwrap() == &expect_token {
+            self.now_token.next();
+            true
+        } else {
+            false
+        }
+    }
+
     fn expect(&mut self, expect_token: Type) -> bool {
+        self.skip(Type::Enter);
+        let mut token = self.now_token.clone();
+        let t2 = token.next().unwrap().clone();
+        if t2 == Type::Enter {
+            self.now_token.next();
+            self.now_token.next();
+        }
         if self.now_token.next().unwrap().clone() == expect_token {
             true
         } else {
@@ -103,7 +119,7 @@ impl<'a> Parser<'a> {
         if self.expect(expect_token.clone()) {
             true
         } else {
-            panic!("Syntax error: {:?} がありません", expect_token)
+            panic!("Syntax error: {:?} が期待されていました。", expect_token,)
         }
     }
 
@@ -140,7 +156,13 @@ impl<'a> Parser<'a> {
     }
 
     fn call_function(&mut self) -> Node {
-        let function_name_node = self.word();
+        let function_name;
+        let mut token = self.now_token.clone();
+        if let Type::Identifier(word) = token.next().unwrap().clone() {
+            function_name = word;
+        } else {
+            function_name = String::new();
+        }
         self.now_token.next();
         let mut args = vec![Node {
             kind: None,
@@ -159,7 +181,7 @@ impl<'a> Parser<'a> {
 
         return Node {
             kind: Some(NodeKind::Call {
-                function_name: Box::new(function_name_node),
+                function_name,
                 args,
             }),
             token: Type::EOF,
@@ -389,13 +411,14 @@ impl<'a> Parser<'a> {
 
     pub fn function(&mut self) -> Node {
         let function_type = self.now_token.next().unwrap().clone();
+
         self.expect_err(Type::Colon);
         let function_name = self.now_token.next().unwrap().clone();
         self.expect_err(Type::LParen);
         let argument = self.argument();
         self.expect_err(Type::RParen);
         self.expect_err(Type::Equal);
-        //        self.expect_err(Type::Minus);
+
         Node {
             kind: Some(NodeKind::Function {
                 params: argument,

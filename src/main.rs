@@ -15,9 +15,12 @@ fn run(code_string: String) {
 fn main() {
     let code_string = String::from(
         "
-int: sub1(int: c, int: d) <- {
+int: c(int: c, int: d) <- {
     pass;
 }
+
+
+
 int: main(int: a) <- {
     a;
     b();
@@ -28,6 +31,7 @@ int: main(int: a) <- {
     };
     return x + y + z;
 }
+
 ",
     );
     /*"
