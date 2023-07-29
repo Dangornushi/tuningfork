@@ -1,3 +1,4 @@
+mod c_generator;
 mod parse;
 mod python_generator;
 mod token;
@@ -8,6 +9,7 @@ fn run(code_string: String) {
     let mut parse = parse::Parser::new(&tokens);
     let ast = parse.root();
 
+    //let mut generator = c_generator::C_Generator::new();
     let mut generator = python_generator::PythonGenerator::new();
     generator.generator(ast)
 }
@@ -15,21 +17,20 @@ fn run(code_string: String) {
 fn main() {
     let code_string = String::from(
         "
-int: c(int: c, int: d) <- {
+int: c(int: a, int: d) <- {
+    int: x <- 12;
     pass;
 }
 
 
 
 int: main(int: a) <- {
-    a;
-    b();
     c(12);
     int: x <- 12;
-    if y>x<12 {
+    if a>x<12 {
         return x;
     };
-    return x + y + z;
+    return c(12) + x;
 }
 
 ",

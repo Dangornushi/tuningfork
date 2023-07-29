@@ -410,8 +410,11 @@ impl<'a> Parser<'a> {
     }
 
     pub fn function(&mut self) -> Node {
+        let mut token = self.now_token.clone();
+        while token.next().unwrap() == &Type::Enter {
+            self.now_token.next();
+        }
         let function_type = self.now_token.next().unwrap().clone();
-
         self.expect_err(Type::Colon);
         let function_name = self.now_token.next().unwrap().clone();
         self.expect_err(Type::LParen);
