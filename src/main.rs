@@ -3,6 +3,7 @@ mod parse;
 mod python_generator;
 mod token;
 
+use std::env;
 use std::fs::File;
 use std::io::{self, Read, Write};
 
@@ -28,7 +29,11 @@ fn run(code_string: String) {
 }
 
 fn main() {
-    let filename = "test.txt";
+    let args: Vec<String> = env::args().collect();
+    if args.len() <= 1 {
+        eprintln!("Err: 引数が足りません");
+    }
+    let filename = &args[1];
     match read_from_file(filename) {
         Ok(code_string) => run(code_string),
         Err(e) => eprintln!("Error: {}", e),
