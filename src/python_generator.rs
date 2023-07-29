@@ -4,6 +4,9 @@ use crate::token::Type;
 use std::collections::HashMap;
 use std::process::exit;
 
+use std::fs::File;
+use std::io::{self, Read, Write};
+
 const CONST_VARIABLE_RESERV: i32 = 0;
 const CONST_FUNCTION_RESERV: i32 = 1;
 
@@ -40,6 +43,13 @@ impl PythonGenerator {
             is_sucsess_type_test: true,
             now_identifier: "".to_string(),
         }
+    }
+    pub fn write_to_file(&mut self, filename: &str, content: &str) -> io::Result<()> {
+        let mut file = File::create(filename)?; // ファイルを作成または開く
+
+        file.write_all(content.as_bytes())?; // テキストをファイルに書き込む
+
+        Ok(()) // 成功時は`Ok`を返す
     }
 
     pub fn add_source_buf(&mut self, data: String) {
@@ -193,6 +203,13 @@ impl PythonGenerator {
                         exit(0);
                     }
                     println!("{}", self.source_buf);
+                    let filename = "test.py";
+                    let buf: &str = &self.source_buf.clone();
+                    if let Err(e) = self.write_to_file(filename, buf) {
+                        eprintln!("Error: {}", e);
+                    } else {
+                        println!("File '{}' created and written successfully.", filename);
+                    }
                 }
                 _ => {}
             },
