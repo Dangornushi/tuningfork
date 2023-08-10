@@ -412,14 +412,26 @@ impl<'a> Parser<'a> {
     pub fn function(&mut self) -> Node {
         let mut token = self.now_token.clone();
         while token.next().unwrap() == &Type::Enter {
+            println!("!!!");
             self.now_token.next();
         }
         let function_type = self.now_token.next().unwrap().clone();
+        println!("{:?}", function_type.clone());
         self.expect_err(Type::Colon);
         let function_name = self.now_token.next().unwrap().clone();
-        self.expect_err(Type::LParen);
-        let argument = self.argument();
-        self.expect_err(Type::RParen);
+
+        let mut token = self.now_token.clone();
+        let mut argument = Vec::new();
+        if token.next().unwrap() == &Type::LParen {
+            self.expect_err(Type::LParen);
+            argument = self.argument();
+            self.expect_err(Type::RParen);
+        } else {
+            argument = vec![Node {
+                kind: None,
+                token: Type::EOF,
+            }];
+        }
         self.expect_err(Type::Equal);
 
         Node {
@@ -436,7 +448,6 @@ impl<'a> Parser<'a> {
     pub fn root(&mut self) -> Node {
         let mut function_define_s = Vec::new();
         self.now_token = self.tokens.iter();
-        self.now_token.next();
         function_define_s.push(self.function());
         self.now_token.next();
         function_define_s.push(self.function());

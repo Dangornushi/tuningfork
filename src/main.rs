@@ -16,15 +16,15 @@ fn read_from_file(filename: &str) -> io::Result<String> {
     Ok(content) // 読み込んだテキストを`Ok`で返す
 }
 
-fn run(code_string: String) {
+fn run(code_string: String, filename: String) {
     let mut lexer = token::Lexer::new(code_string);
     let tokens = lexer.lex(); // Token列を作成
     let mut parse = parse::Parser::new(&tokens);
     let ast = parse.root(); // AST列を作成
 
     //let mut generator = c_generator::C_Generator::new();
-    let mut generator = python_generator::PythonGenerator::new(); // Python generator
-                                                                  // のインスタンスを作成
+    let mut generator = python_generator::PythonGenerator::new(filename); // Python generator
+                                                                          // のインスタンスを作成
     generator.generator(ast) // AST列を解析
 }
 
@@ -35,18 +35,7 @@ fn main() {
     }
     let filename = &args[1];
     match read_from_file(filename) {
-        Ok(code_string) => run(code_string),
+        Ok(code_string) => run(code_string, filename.clone()),
         Err(e) => eprintln!("Error: {}", e),
     }
-    /*"
-    int: main() <- {
-        int: x <- 12;
-        int: y <- 42;
-
-        // 結果は54になるはず
-        return x + y;
-    }
-    ",
-        );
-        */
 }

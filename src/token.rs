@@ -104,6 +104,8 @@ impl Lexer {
                             tokens.push(words);
                         }
                     }
+                    '\t' => (),
+
                     _ => panic!("Invalid character: {}", ch),
                 }
             }

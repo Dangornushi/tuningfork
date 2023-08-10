@@ -21,10 +21,11 @@ pub struct PythonGenerator {
     get_variable_or_function: HashMap<String, i32>,
     is_sucsess_type_test: bool,
     now_identifier: String,
+    filename: String,
 }
 
 impl PythonGenerator {
-    pub fn new() -> Self {
+    pub fn new(filename: String) -> Self {
         Self {
             tabs_counter: 0,
             source_buf: str_to_string(""),
@@ -42,9 +43,19 @@ impl PythonGenerator {
             get_variable_or_function: HashMap::new(),
             is_sucsess_type_test: true,
             now_identifier: "".to_string(),
+            filename,
         }
     }
-    pub fn write_to_file(&mut self, filename: &str, content: &str) -> io::Result<()> {
+
+    fn get_original_filename(&mut self, filename: String) -> String {
+        if let Some(index) = filename.find('.') {
+            filename[..index].to_string()
+        } else {
+            filename.to_string()
+        }
+    }
+
+    pub fn write_to_file(&mut self, filename: String, content: &str) -> io::Result<()> {
         let mut file = File::create(filename)?; // ファイルを作成または開く
 
         file.write_all(content.as_bytes())?; // テキストをファイルに書き込む
@@ -202,10 +213,11 @@ impl PythonGenerator {
                     if !self.is_sucsess_type_test {
                         exit(0);
                     }
-                    println!("{}", self.source_buf);
-                    let filename = "test.py";
+                    self.add_source_buf("main()".to_string());
+                    let mut filename = self.filename.clone();
+                    filename = self.get_original_filename(filename) + ".py";
                     let buf: &str = &self.source_buf.clone();
-                    if let Err(e) = self.write_to_file(filename, buf) {
+                    if let Err(e) = self.write_to_file(filename.clone(), buf) {
                         eprintln!("Error: {}", e);
                     } else {
                         println!("File '{}' created and written successfully.", filename);
