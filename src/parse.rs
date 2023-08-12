@@ -24,6 +24,7 @@ pub enum NodeKind {
         rhs: Box<Node>,
     },
     Block(Vec<Node>),
+    Import(String),
     Let {
         v_name: String,
         v_type: String,
@@ -410,18 +411,12 @@ impl<'a> Parser<'a> {
     }
 
     pub fn function(&mut self) -> Node {
-        let mut token = self.now_token.clone();
-        while token.next().unwrap() == &Type::Enter {
-            println!("!!!");
-            self.now_token.next();
-        }
         let function_type = self.now_token.next().unwrap().clone();
-        println!("{:?}", function_type.clone());
         self.expect_err(Type::Colon);
         let function_name = self.now_token.next().unwrap().clone();
 
         let mut token = self.now_token.clone();
-        let mut argument = Vec::new();
+        let argument;
         if token.next().unwrap() == &Type::LParen {
             self.expect_err(Type::LParen);
             argument = self.argument();
@@ -445,12 +440,33 @@ impl<'a> Parser<'a> {
         }
     }
 
+    pub fn enter_skip(&mut self) -> Result<(), &str> {
+        let mut t2 = self.now_token.clone();
+        let mut t3 = self.now_token.clone();
+        if t3.next() == None {
+            println!("result: {:?}", t3.next());
+            return Err("err");
+        } else if t2.next().unwrap() == &Type::Enter {
+            self.now_token.next();
+            let _ = self.enter_skip();
+            return Ok(());
+        } else {
+            return Ok(());
+        }
+    }
+
     pub fn root(&mut self) -> Node {
         let mut function_define_s = Vec::new();
         self.now_token = self.tokens.iter();
-        function_define_s.push(self.function());
-        self.now_token.next();
-        function_define_s.push(self.function());
+
+        loop {
+            if self.enter_skip() == Err("err") {
+                break;
+            }
+            function_define_s.push(self.function());
+            let _ = self.enter_skip();
+        }
+
         Node {
             kind: Some(NodeKind::Root { function_define_s }),
             token: Type::EOF,

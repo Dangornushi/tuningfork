@@ -136,13 +136,17 @@ impl PythonGenerator {
                     }
                 }
                 NodeKind::Pass(word) => self.add_source_buf("pass".to_string()),
+                NodeKind::Import(lib) => {
+                    self.add_source_buf("import ".to_string());
+                    self.add_source_buf(lib);
+                }
                 NodeKind::BinaryOp { op, lhs, rhs } => {
                     self.generator(*lhs);
                     self.add_source_buf(self.op_preset[&op].to_string());
                     self.generator(*rhs);
                 }
                 NodeKind::Return(arg) => {
-                    self.add_source_buf("retrun ".to_string());
+                    self.add_source_buf("return ".to_string());
                     self.generator(*arg);
                 }
                 NodeKind::Compare { lhs, op, rhs } => {

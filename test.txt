@@ -1,5 +1,16 @@
+
+
+
+
+
 int: main <- {
-int: x <- 12;
-int: y <- 42;
-return x + y;
+    int: x <- 12;
+    int: y <- 42;
+    return x + y;
+}
+
+
+
+int: sub(int:a) <-  {
+    return a;
 }
