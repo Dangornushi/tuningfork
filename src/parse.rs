@@ -412,6 +412,12 @@ impl<'a> Parser<'a> {
 
     pub fn function(&mut self) -> Node {
         let function_type = self.now_token.next().unwrap().clone();
+        if let Type::Identifier(identifier) = function_type.clone() {
+            match identifier.as_str() {
+                "import" => {}
+                _ => {}
+            }
+        }
         self.expect_err(Type::Colon);
         let function_name = self.now_token.next().unwrap().clone();
 
@@ -440,18 +446,37 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn enter_skip(&mut self) -> Result<(), &str> {
+    pub fn import(&mut self) -> Node {
+        self.now_token.next();
+        let mut import_messod = String::from("");
+        if let Type::Identifier(import_messod_name) = self.now_token.next().unwrap() {
+            match import_messod_name {
+                _ => import_messod = import_messod_name.to_string(),
+            }
+        }
+        println!("import fin");
+        Node {
+            kind: Some(NodeKind::Import(import_messod.to_string())),
+            token: Type::EOF,
+        }
+    }
+
+    pub fn enter_skip(&mut self) -> Result<&str, &str> {
         let mut t2 = self.now_token.clone();
-        let mut t3 = self.now_token.clone();
-        if t3.next() == None {
-            println!("result: {:?}", t3.next());
+        if t2.clone().next() == None {
+            // Fileの終わり
             return Err("err");
-        } else if t2.next().unwrap() == &Type::Enter {
+        }
+
+        if let Type::Identifier(type_or_import) = t2.next().unwrap() {
+            match type_or_import.as_str() {
+                "import" => return Ok("import"),
+                _ => return Ok("function"),
+            }
+        } else {
             self.now_token.next();
             let _ = self.enter_skip();
-            return Ok(());
-        } else {
-            return Ok(());
+            return Ok("function");
         }
     }
 
@@ -460,11 +485,18 @@ impl<'a> Parser<'a> {
         self.now_token = self.tokens.iter();
 
         loop {
-            if self.enter_skip() == Err("err") {
-                break;
+            match self.enter_skip() {
+                Err("err") => break,
+                Ok("function") => {
+                    function_define_s.push(self.function());
+                    let _ = self.enter_skip();
+                }
+                Ok("import") => {
+                    function_define_s.push(self.import());
+                    let _ = self.enter_skip();
+                }
+                _ => {}
             }
-            function_define_s.push(self.function());
-            let _ = self.enter_skip();
         }
 
         Node {

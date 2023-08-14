@@ -1,7 +1,4 @@
-
-
-
-
+import OK
 
 int: main <- {
     int: x <- 12;
@@ -14,3 +11,10 @@ int: main <- {
 int: sub(int:a) <-  {
     return a;
 }
+
+
+
+
+
+
+

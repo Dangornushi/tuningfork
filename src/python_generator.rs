@@ -136,9 +136,10 @@ impl PythonGenerator {
                     }
                 }
                 NodeKind::Pass(word) => self.add_source_buf("pass".to_string()),
-                NodeKind::Import(lib) => {
+                NodeKind::Import(import_messod_name) => {
                     self.add_source_buf("import ".to_string());
-                    self.add_source_buf(lib);
+                    self.add_source_buf(import_messod_name);
+                    self.add_source_buf("\n".to_string());
                 }
                 NodeKind::BinaryOp { op, lhs, rhs } => {
                     self.generator(*lhs);
