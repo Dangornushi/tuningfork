@@ -5,10 +5,11 @@ use std::collections::HashMap;
 use std::process::exit;
 
 use std::fs::File;
-use std::io::{self, Read, Write};
+use std::io::{self, Write};
 
 const CONST_VARIABLE_RESERV: i32 = 0;
 const CONST_FUNCTION_RESERV: i32 = 1;
+const CONST_CLASS_RESERV: i32 = 2;
 
 fn str_to_string(s: &str) -> String {
     s.to_string()
@@ -84,10 +85,10 @@ impl PythonGenerator {
     pub fn get_identifier(&mut self, type_data: Type) -> String {
         let nothing = String::from("");
 
-        if let Type::Identifier(word) = type_data.clone() {
-            return word;
+        if let Type::Identifier(word) = type_data {
+            word
         } else {
-            return nothing;
+            nothing
         }
     }
 
@@ -103,14 +104,22 @@ impl PythonGenerator {
     }
 
     pub fn generator(&mut self, node: Node) {
-        match node.kind {
-            Some(node_kind) => match node_kind {
+        if let Some(node_kind) = node.kind {
+            match node_kind {
                 NodeKind::Num(num) => {
                     self.add_source_buf(num.to_string());
                 }
                 NodeKind::Str(word) => {
                     self.now_identifier = word.clone();
                     self.add_source_buf(word);
+                }
+                NodeKind::CallMenber {
+                    now_menber_name,
+                    next,
+                } => {
+                    self.add_source_buf(now_menber_name);
+                    self.add_source_buf(".".to_string());
+                    self.generator(*next);
                 }
                 NodeKind::Call {
                     function_name,
@@ -119,7 +128,7 @@ impl PythonGenerator {
                     self.add_source_buf(function_name.clone());
                     match self.get_variable_or_function.get(&function_name) {
                         Some(value) => {
-                            if *value == CONST_FUNCTION_RESERV {
+                            if *value == CONST_FUNCTION_RESERV || *value == CONST_CLASS_RESERV {
                                 // 関数が使われている
                                 self.add_source_buf("(".to_string());
                                 self.exec_argument(args);
@@ -130,12 +139,16 @@ impl PythonGenerator {
                         }
                         None => {
                             // 関数か変数かわからないものが使われている
-                            println!("Err: {}が定義されていません", function_name);
-                            self.is_sucsess_type_test = false;
+                            println!("警告: {}が定義されていません。直接記入モジュールに含まれていれば問題ありません。", function_name);
+
+                            self.add_source_buf("(".to_string());
+                            self.exec_argument(args);
+                            self.add_source_buf(")".to_string());
+                            //self.is_sucsess_type_test = false;
                         }
                     }
                 }
-                NodeKind::Pass(word) => self.add_source_buf("pass".to_string()),
+                NodeKind::Pass(_word) => self.add_source_buf("pass".to_string()),
                 NodeKind::Import(import_messod_name) => {
                     self.add_source_buf("import ".to_string());
                     self.add_source_buf(import_messod_name);
@@ -163,8 +176,10 @@ impl PythonGenerator {
                 } => {
                     self.now_identifier = v_name.clone();
                     self.add_source_buf(v_name);
-                    self.add_source_buf(":".to_string());
-                    self.add_source_buf(v_type);
+                    /*
+                                        self.add_source_buf(": ".to_string());
+                                        self.add_source_buf(v_type);
+                    */
                     if this_is_define {
                         self.get_variable_or_function
                             .insert(self.now_identifier.clone(), CONST_VARIABLE_RESERV);
@@ -172,15 +187,32 @@ impl PythonGenerator {
                     }
                     self.generator(*v_formula);
                 }
-                NodeKind::If { cond, then, else_ } => {
+                NodeKind::If {
+                    cond,
+                    then,
+                    elif_then,
+                    else_then,
+                } => {
                     self.add_source_buf("if ".to_string());
                     self.generator(*cond);
                     self.add_source_buf(":\n".to_string());
                     self.generator(*then);
+                    if else_then != None {
+                        let indent = self.get_indent();
+                        self.add_source_buf(indent);
+                        self.add_source_buf("else:\n".to_string());
+                        self.generator(*else_then.unwrap());
+                    }
+                }
+                NodeKind::While { cond, body } => {
+                    self.add_source_buf("while ".to_string());
+                    self.generator(*cond);
+                    self.add_source_buf(":\n".to_string());
+                    self.generator(*body);
                 }
                 NodeKind::Expr { reserv } => {
-                    let indent = self.get_indent().clone();
-                    self.add_source_buf(indent.to_string());
+                    let indent = self.get_indent();
+                    self.add_source_buf(indent);
                     self.generator(*reserv);
                     self.add_source_buf("\n".to_string());
                 }
@@ -196,20 +228,69 @@ impl PythonGenerator {
                     body,
                     function_type,
                     function_name,
+                    is_menber,
                 } => {
                     let identifier = self.get_identifier(function_name);
                     self.get_variable_or_function
-                        .insert(identifier.clone().to_string(), CONST_FUNCTION_RESERV);
+                        .insert(identifier.to_string(), CONST_FUNCTION_RESERV);
                     let f_type = self.get_identifier(function_type);
-
+                    let indent = self.get_indent();
+                    self.add_source_buf(indent);
                     self.add_source_buf("def ".to_string());
-                    self.add_source_buf(identifier.to_string());
-                    self.add_source_buf("(".to_string());
-                    self.exec_argument(params);
-                    self.add_source_buf(") ->".to_string());
-                    self.add_source_buf(f_type.to_string());
+
+                    if identifier == "_init_".to_string() {
+                        self.add_source_buf("__init__".to_string());
+
+                        self.add_source_buf("(".to_string());
+                        if is_menber {
+                            self.add_source_buf("self".to_string());
+                            if !params.is_empty() {
+                                self.add_source_buf(", ".to_string());
+                            }
+                        }
+
+                        self.exec_argument(params);
+                        self.add_source_buf(")".to_string());
+                    } else {
+                        self.add_source_buf(identifier);
+
+                        self.add_source_buf("(".to_string());
+                        if is_menber {
+                            self.add_source_buf("self".to_string());
+                            if !params.is_empty() {
+                                self.add_source_buf(", ".to_string());
+                            }
+                        }
+
+                        self.exec_argument(params);
+                        self.add_source_buf(") -> ".to_string());
+                        self.add_source_buf(f_type);
+                    }
                     self.add_source_buf(":\n".to_string());
                     self.generator(*body);
+                    self.add_source_buf("\n\n".to_string());
+                }
+                NodeKind::Class {
+                    class_name,
+                    menbers,
+                } => {
+                    self.get_variable_or_function
+                        .insert(class_name.to_string(), CONST_CLASS_RESERV);
+                    self.add_source_buf("class ".to_string());
+                    self.add_source_buf(class_name);
+                    self.add_source_buf(":\n".to_string());
+                    self.tabs_counter += 1;
+                    for func in menbers {
+                        self.generator(func);
+                    }
+                    self.tabs_counter -= 1;
+                }
+
+                NodeKind::RawLanguage {
+                    language_type,
+                    raw_data,
+                } => {
+                    self.add_source_buf(raw_data);
                 }
                 NodeKind::Root { function_define_s } => {
                     for ast in function_define_s {
@@ -229,8 +310,7 @@ impl PythonGenerator {
                     }
                 }
                 _ => {}
-            },
-            None => {}
+            }
         }
     }
 }

@@ -146,7 +146,12 @@ impl C_Generator {
                     }
                     self.generator(*v_formula);
                 }
-                NodeKind::If { cond, then, else_ } => {
+                NodeKind::If {
+                    cond,
+                    then,
+                    elif_then,
+                    else_then,
+                } => {
                     self.add_source_buf("if (".to_string());
                     self.generator(*cond);
                     self.add_source_buf(") ".to_string());
@@ -174,6 +179,7 @@ impl C_Generator {
                     body,
                     function_type,
                     function_name,
+                    is_menber,
                 } => {
                     let identifier = self.get_identifier(function_name);
                     self.get_variable_or_function

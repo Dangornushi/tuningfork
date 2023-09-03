@@ -20,8 +20,12 @@ pub enum Type {
     LBraces,
     RBraces,
     Conma,
+    Period,
     Identifier(String),
+    DoubleQuotation(String),
     Number(i64),
+    Hashtag,
+    Atsign,
     EOF,
 }
 
@@ -54,7 +58,11 @@ impl Lexer {
             '{' => Type::LBraces,
             '}' => Type::RBraces,
             ',' => Type::Conma,
+            '.' => Type::Period,
+            '#' => Type::Hashtag,
             '\n' => Type::Enter,
+            '@' => Type::Atsign,
+            '!' => Type::EOF,
         );
         Self {
             tokens,
@@ -80,6 +88,20 @@ impl Lexer {
                 } else {
                     tokens.push(Type::Less);
                 }
+                chars.next();
+            } else if ch == '"' {
+                chars.next();
+                let mut identifier = String::new();
+
+                while let Some(&ch) = chars.peek() {
+                    if ch == '"' {
+                        break;
+                    } else {
+                        identifier.push(ch);
+                        chars.next();
+                    }
+                }
+                tokens.push(Type::DoubleQuotation(identifier));
                 chars.next();
             } else if let Some(value) = self.char_to_type.get(&ch).cloned() {
                 // `ch`が`char_to_type`のキーに存在する場合、`value`は`char_to_type[ch]`の値
@@ -117,17 +139,17 @@ impl Lexer {
     pub fn is_japanese_char(&mut self, c: char) -> bool {
         let c = c as u32;
 
-        (0x3040 <= c && c <= 0x309F)   ||  // ひらがな
-        (0x30A0 <= c && c <= 0x30FF)   ||  // カタカナ
-        (0x3400 <= c && c <= 0x4DBF)   ||  // CJK統合漢字拡張A
-        (0x4E00 <= c && c <= 0x9FFF)   ||  // 基本漢字 + CJK統合漢字
-        (0x20000 <= c && c <= 0x2A6DF) ||  // CJK統合漢字拡張B ~ E
-        (0x2A700 <= c && c <= 0x2B73F) ||  // CJK統合漢字拡張F
-        (0x2B740 <= c && c <= 0x2B81F) ||  // CJK統合漢字拡張G
-        (0x2B820 <= c && c <= 0x2CEAF) ||  // CJK統合漢字拡張H ~ J
-        (0xF900 <= c && c <= 0xFAFF)   ||  // CJK互換漢字
-        (0x2F800 <= c && c <= 0x2FA1F) || // CJK互換漢字補助
-        (0x4E00 <= c && c <= 0x9FFF) // 漢字
+        (0x3040..=0x309F).contains(&c)   ||  // ひらがな
+        (0x30A0..=0x30FF).contains(&c)   ||  // カタカナ
+        (0x3400..=0x4DBF).contains(&c)   ||  // CJK統合漢字拡張A
+        (0x4E00..=0x9FFF).contains(&c)   ||  // 基本漢字 + CJK統合漢字
+        (0x20000..=0x2A6DF).contains(&c) ||  // CJK統合漢字拡張B ~ E
+        (0x2A700..=0x2B73F).contains(&c) ||  // CJK統合漢字拡張F
+        (0x2B740..=0x2B81F).contains(&c) ||  // CJK統合漢字拡張G
+        (0x2B820..=0x2CEAF).contains(&c) ||  // CJK統合漢字拡張H ~ J
+        (0xF900..=0xFAFF).contains(&c)   ||  // CJK互換漢字
+        (0x2F800..=0x2FA1F).contains(&c) || // CJK互換漢字補助
+        (0x4E00..=0x9FFF).contains(&c) // 漢字
     }
 
     fn parse_identifier(&mut self, chars: &mut Peekable<Chars>) -> Option<Type> {

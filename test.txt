@@ -1,20 +1,35 @@
-import OK
+language:PYTHON <- {
+"#!/usr/bin/env pybricks-micropython
+import sys
+from pybricks import ev3brick as brick
+from pybricks.ev3devices import (Motor, TouchSensor, ColorSensor, InfraredSensor, UltrasonicSensor, GyroSensor)
+from pybricks.parameters import (Port, Stop, Direction, Button, Color, SoundFile, ImageFile, Align)
+from pybricks.tools import print, wait, StopWatch
+from pybricks.robotics import DriveBase
+
+
+"
+}
+
+
+class Main <- {
+    void: _init_(self) <- {
+        pass;
+    }
+    int: a(self) <- {
+        Motor: m <- Motor(Port.1);
+        m.run(100);
+        int: y <- 42;
+        return self.x + y;
+    }
+}
+int: sub <- {
+    return 0;
+}
 
 int: main <- {
-    int: x <- 12;
-    int: y <- 42;
-    return x + y;
+    Main: a1 <- Main;
+    print(a1.a());
+    return 0;
 }
-
-
-
-int: sub(int:a) <-  {
-    return a;
-}
-
-
-
-
-
-
 
